@@ -68,7 +68,7 @@ stan_glm(att_chg ~ liberal - 1,
 # to immigrants during the experiment had a more liberal change in attitude
 # of about -0.4 magnitude (which could be explained by omitting variables, etc).
 
-q1 <- stan_glm(att_chg ~ treatment - 1,
+q1 <- stan_glm(att_chg ~ treatment + liberal - 1,
          data = week_8,
          refresh = 0)
 ```
@@ -96,8 +96,9 @@ q1 %>%
                names_to = "parameter",
                  values_to = "attitude_change") %>%
   ggplot(aes(x = attitude_change, fill = parameter)) +
-  geom_histogram(aes(y = after_stat(count/sum(count))),              
-                 alpha = 0.75, bins = 100) +
+  geom_density(alpha = 0.5)
+#  geom_histogram(aes(y = after_stat(count/sum(count))),              
+     #            alpha = 0.75, bins = 100) +
 scale_y_continuous(labels=scales::percent_format()) +
 theme_classic() +
   labs(x = "Attitude Change",
@@ -118,6 +119,9 @@ theme_classic() +
 # distribution model to be around a 0.5 to 1.0 positive shift in attitude. This
 # means that exposure to immigrants on average creates a more conservative view
 # of immigration by a small degree.
+# Our vline shows the median value of this distribution of average treatment 
+# effects at around 0.7944881, a significantly positive change in attitude
+# when exposed to treatment!
 
 q <- q1 %>%
   as_tibble() %>%
@@ -135,6 +139,7 @@ theme_classic() +
              color = "red",
              lty = "dashed")
 
+  median(q$ATE)
 ```
 
 
