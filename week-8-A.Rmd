@@ -114,17 +114,26 @@ theme_classic() +
 
 ```{r}
 
-q1 %>%
+# The average treatment effect of running the trains experiment is shown in this
+# distribution model to be around a 0.5 to 1.0 positive shift in attitude. This
+# means that exposure to immigrants on average creates a more conservative view
+# of immigration by a small degree.
+
+q <- q1 %>%
   as_tibble() %>%
   select(-sigma) %>%
-  mutate(ATE = treatmentTreated - treatmentControl) %>%
-  ggplot(aes(x = ATE, y = after_stat(count/sum(count)))) +
-  geom_histogram(alpha = 0.75, bins = 100, fill = "dodgerblue") +
+  mutate(ATE = treatmentTreated - treatmentControl)
+
+  ggplot(q, aes(x = ATE, y = after_stat(count/sum(count)))) +
+  geom_histogram(alpha = 1, bins = 100, fill = "dodgerblue") +
 scale_y_continuous(labels=scales::percent_format()) +
 theme_classic() +
-  labs(x = "Shifts in Attitude",
+  labs(x = "Treatment Effect",
        y = "Probability",
-       title = "Average Treatment Effect of Trains Experiment")
+       title = "Average Treatment Effect of Trains Experiment") +
+  geom_vline(xintercept = median(q$ATE),
+             color = "red",
+             lty = "dashed")
 
 ```
 
