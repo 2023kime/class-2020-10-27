@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = FALSE)
 library(PPBDS.data)
 library(rstanarm)
 library(tidyverse)
+library(rsample)
 
 # Recall that Enos (2014) actually looks at a measure of change in attitude
 # toward immigration, rather than simply at the ending attitude. Let's create
@@ -129,7 +130,8 @@ q <- q1 %>%
   mutate(ATE = treatmentTreated - treatmentControl)
 
   ggplot(q, aes(x = ATE, y = after_stat(count/sum(count)))) +
-  geom_histogram(alpha = 1, bins = 100, fill = "dodgerblue") +
+    geom_density(alpha = 0.5, fill = "dodgerblue") +
+ # geom_histogram(alpha = 1, bins = 100, fill = "dodgerblue") +
 scale_y_continuous(labels=scales::percent_format()) +
 theme_classic() +
   labs(x = "Treatment Effect",
@@ -142,4 +144,36 @@ theme_classic() +
   median(q$ATE)
 ```
 
+
+```{r}
+
+d <- trains %>%
+  filter(treatment == "Treated") %>%
+  select(att_end) %>%
+  bootstraps(times = 1000) %>%
+  mutate(boot = map(splits, ~ analysis(.))) %>%
+  mutate(att_end = map(boot, ~ pull(., att_end))) %>%
+mutate(att_end_mean = map_dbl(att_end, ~mean(.)))
+mean(d$att_end_mean)
+```
+```{r}
+
+model <- stan_glm(att_chg ~ 1,
+         data = week_8,
+         refresh = 0)
+
+model_interval <- posterior_interval(model)
+model_interval
+
+
+```
+
+```{r}
+
+model2 <- stan_glm(att_chg ~ treatment,
+         data = week_8,
+         refresh = 0)
+model2_interval <- posterior_interval(model2)
+
+```
 
