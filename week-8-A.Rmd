@@ -38,10 +38,40 @@ Weeks 7, 8 and 9 are the core of the class. We have a question. We have some dat
 
 ```{r}
 
+# The first model assesses the effect based on gender. This is a predictive
+# model as this variable cannot be changed for each observation. The data shows
+# that differences in the results by gender leans toward positive for Female, or
+# that the median observation for females will shift towards a more conservative
+# outcome, while the median Male observation shows a more liberal outcome.
+# The model indicates that men are more likely to have a more liberal view after
+# the experiment than women.
 
+stan_glm(att_chg ~ gender - 1,
+         data = week_8,
+         refresh = 0)
+
+# This model is also predictive rather than causal. The liberal/not liberal 
+# variable simply indicates an existing factor that cannot be tested or changed
+# in the experiment. The variation between both groups is very small, at 0.1
+# difference in the median of both groups.
+
+stan_glm(att_chg ~ liberal - 1,
+         data = week_8,
+         refresh = 0)
+
+# The last model is the only causal model. Treatment is not an inherent trait 
+# of the observations but rather a change that can cause the difference in 
+# outcome. If you calculated the average att_change by treatment, you could
+# come up with an estimate of the causal effect. The treated observations had a
+# median change in attitude of 0.4, or a more conservative attitude towards 
+# immigrants after the experiment. In contrast, observations without exposure
+# to immigrants during the experiment had a more liberal change in attitude
+# of about -0.4 magnitude (which could be explained by omitting variables, etc).
+
+q1 <- stan_glm(att_chg ~ treatment - 1,
+         data = week_8,
+         refresh = 0)
 ```
-
-
 
 
 ## Scene 2
@@ -49,6 +79,30 @@ Weeks 7, 8 and 9 are the core of the class. We have a question. We have some dat
 **Prompt:** For the model with `att_chg` as a function of `treatment`, create posterior probability densities for the two important parameters. Write a paragraph interpreting the meaning of those posteriors. 
 
 ```{r}
+
+# The model shows us that attitude changes differ largely based on whether the
+# observation is treated or not. Observations without exposure (control) are
+# more likely to have a negative attitude change (towards liberal views), while
+# treated observations are more likely to have a positive attitude change
+# (towards conservative views). Both distributions seem to be grouped at a 
+# similar distance of 0.5 change on average from no change (0).
+
+q1 %>%
+  as_tibble() %>%
+  select(-sigma) %>%
+  mutate(Treated = treatmentTreated, 
+         Control = treatmentControl) %>%
+  pivot_longer(cols = Treated:Control,
+               names_to = "parameter",
+                 values_to = "attitude_change") %>%
+  ggplot(aes(x = attitude_change, fill = parameter)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))),              
+                 alpha = 0.75, bins = 100) +
+scale_y_continuous(labels=scales::percent_format()) +
+theme_classic() +
+  labs(x = "Attitude Change",
+       y = "Probability",
+       title = "Change in Attitude Based on Exposure to Immigrants ")
 
 ```
 
@@ -59,6 +113,18 @@ Weeks 7, 8 and 9 are the core of the class. We have a question. We have some dat
 **Prompt:** Create a plot of the the posterior for the average treatment effect. Write a paragraph interpreting the plot.
 
 ```{r}
+
+q1 %>%
+  as_tibble() %>%
+  select(-sigma) %>%
+  mutate(ATE = treatmentTreated - treatmentControl) %>%
+  ggplot(aes(x = ATE, y = after_stat(count/sum(count)))) +
+  geom_histogram(alpha = 0.75, bins = 100, fill = "dodgerblue") +
+scale_y_continuous(labels=scales::percent_format()) +
+theme_classic() +
+  labs(x = "Shifts in Attitude",
+       y = "Probability",
+       title = "Average Treatment Effect of Trains Experiment")
 
 ```
 
